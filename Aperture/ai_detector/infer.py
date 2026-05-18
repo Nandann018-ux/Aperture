@@ -12,7 +12,9 @@ import torch
 from PIL import Image
 
 from Aperture.ai_detector.dataset import build_eval_transform
+from Aperture.ai_detector.gradcam import compute_gradcam
 from Aperture.ai_detector.model import get_model
+from Aperture.utils.visualization import overlay_heatmap
 
 _LABELS = {0: "real", 1: "fake"}
 
@@ -74,6 +76,43 @@ class AIDetector:
             "label": _LABELS[pred],
             "confidence": float(probs[pred].item()),
             "raw_logits": logits.detach().cpu().tolist(),
+        }
+
+    def predict_with_explanation(
+        self,
+        pil_image: Image.Image,
+        target_class: Optional[int] = None,
+        alpha: float = 0.5,
+    ) -> dict:
+        """Predict + Grad-CAM / attention-rollout overlay.
+
+        ``target_class`` defaults to the model's predicted class so the
+        heatmap explains "why this label". Pass an int (0=real, 1=fake) to
+        force a specific target.
+        """
+        if not isinstance(pil_image, Image.Image):
+            raise TypeError("predict_with_explanation() expects a PIL.Image")
+        if pil_image.mode != "RGB":
+            pil_image = pil_image.convert("RGB")
+
+        x = self.transform(pil_image).unsqueeze(0).to(self.device)
+        with torch.no_grad():
+            logits = self.model(x).squeeze(0)
+            probs = torch.softmax(logits, dim=0)
+            pred = int(probs.argmax().item())
+
+        tc = pred if target_class is None else int(target_class)
+        # compute_gradcam runs its own forward+backward; it does not run inside no_grad.
+        heatmap = compute_gradcam(self.model, x, target_class=tc)
+        overlay = overlay_heatmap(pil_image, heatmap, alpha=alpha)
+
+        return {
+            "label": _LABELS[pred],
+            "confidence": float(probs[pred].item()),
+            "raw_logits": logits.detach().cpu().tolist(),
+            "target_class": tc,
+            "heatmap": heatmap,
+            "overlay": overlay,
         }
 
     @classmethod
