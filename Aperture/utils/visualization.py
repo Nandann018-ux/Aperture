@@ -25,9 +25,9 @@ def overlay_heatmap(
     img_np = np.asarray(pil_image, dtype=np.float32) / 255.0
     h, w = img_np.shape[:2]
 
-    heat = heatmap.astype(np.float32)
+    heat: np.ndarray = heatmap.astype(np.float32)
     if heat.shape != (h, w):
-        heat = cv2.resize(heat, (w, h), interpolation=cv2.INTER_CUBIC)
+        heat = cv2.resize(heat, (w, h), interpolation=cv2.INTER_CUBIC).astype(np.float32)
     lo, hi = float(heat.min()), float(heat.max())
     if hi - lo > 1e-12:
         heat = (heat - lo) / (hi - lo)

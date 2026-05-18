@@ -68,7 +68,7 @@ def _attention_rollout(
             attentions.append(attn.detach().cpu())
         return hook
 
-    for block in model.encoder.layers:
+    for block in model.encoder.layers:  # type: ignore[union-attr]
         hooks.append(block.self_attention.register_forward_hook(make_hook()))
 
     try:
@@ -131,11 +131,11 @@ def compute_gradcam(
 
     if hasattr(model, "features"):
         # EfficientNet / MobileNet style — last conv block
-        return _gradcam_cnn(model, image_tensor, model.features[-1], target_class)
+        return _gradcam_cnn(model, image_tensor, model.features[-1], target_class)  # type: ignore[index,arg-type]
 
     if hasattr(model, "layer4"):
         # ResNet style — final residual block
-        return _gradcam_cnn(model, image_tensor, model.layer4[-1], target_class)
+        return _gradcam_cnn(model, image_tensor, model.layer4[-1], target_class)  # type: ignore[index,arg-type]
 
     raise ValueError(
         "Unsupported model architecture for compute_gradcam: "
