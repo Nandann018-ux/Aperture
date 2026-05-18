@@ -1,0 +1,22 @@
+{
+  "metrics": {
+    "accuracy": 1.0,
+    "f1": 1.0,
+    "auc": 1.0,
+    "n_train": 480,
+    "n_test": 120
+  },
+  "intercept": 4.561341595654162,
+  "coefficients": {
+    "ai_conf": -6.080075611346619,
+    "tampering_score": -4.787522819084484,
+    "metadata_score": -4.680007994766021,
+    "has_text": 0.16614662544543904
+  },
+  "feature_order": [
+    "ai_conf",
+    "tampering_score",
+    "metadata_score",
+    "has_text"
+  ]
+}
