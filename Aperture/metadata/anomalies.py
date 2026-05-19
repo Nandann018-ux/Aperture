@@ -23,6 +23,7 @@ class Anomaly:
     code: str
     severity: str
     message: str
+    category: str = "other"
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -34,6 +35,7 @@ def detect_anomalies(exif: dict, jpeg: dict) -> list[Anomaly]:
     if not exif:
         flags.append(Anomaly(
             code="no_exif",
+            category="exif",
             severity="medium",
             message="No EXIF metadata — image was re-encoded or stripped.",
         ))
@@ -46,6 +48,7 @@ def detect_anomalies(exif: dict, jpeg: dict) -> list[Anomaly]:
                                                 "dall-e", "dalle", "flux") else "medium"
                     flags.append(Anomaly(
                         code="editing_software",
+                        category="software",
                         severity=sev,
                         message=f"Software tag references '{exif.get('Software')}'.",
                     ))
@@ -56,6 +59,7 @@ def detect_anomalies(exif: dict, jpeg: dict) -> list[Anomaly]:
         if dt_orig and dt_mod and dt_orig != dt_mod:
             flags.append(Anomaly(
                 code="modified_after_capture",
+                category="timestamps",
                 severity="medium",
                 message=f"DateTime differs from DateTimeOriginal "
                         f"({dt_orig} -> {dt_mod}).",
@@ -64,6 +68,7 @@ def detect_anomalies(exif: dict, jpeg: dict) -> list[Anomaly]:
         if not (exif.get("Make") or exif.get("Model")):
             flags.append(Anomaly(
                 code="camera_unknown",
+                category="exif",
                 severity="low",
                 message="No camera Make/Model tag.",
             ))
@@ -73,6 +78,7 @@ def detect_anomalies(exif: dict, jpeg: dict) -> list[Anomaly]:
         if q is not None and q < 70:
             flags.append(Anomaly(
                 code="low_jpeg_quality",
+                category="compression",
                 severity="low",
                 message=f"Estimated JPEG quality {q:.0f} suggests aggressive re-compression.",
             ))
@@ -80,6 +86,7 @@ def detect_anomalies(exif: dict, jpeg: dict) -> list[Anomaly]:
         if nq and nq > 2:
             flags.append(Anomaly(
                 code="atypical_qtables",
+                category="compression",
                 severity="low",
                 message=f"Unusual number of quantization tables ({nq}); "
                         "may indicate non-standard encoder.",

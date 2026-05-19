@@ -1,7 +1,15 @@
-"""Generate synthetic placeholder example images for the tampering pipeline.
+"""Generate synthetic test fixtures for the tampering pipeline.
 
-These are NOT visually realistic — they're algorithmic test fixtures that
-exercise each detector. Replace with real photos / AI images for the demo.
+This script only produces the two **tampering fixtures**:
+    - tampered_composite.jpg  (ELA + noise inconsistency)
+    - copy_move_obvious.jpg   (SIFT copy-move detection)
+
+The other demo examples — `authentic_landscape.jpg`, `authentic_portrait.jpg`,
+`ai_midjourney.jpg`, `ai_realistic.jpg` — are **real CIFAKE samples** pulled
+from a public HuggingFace mirror (see the audit log / scripts). Do NOT
+regenerate them from this script: the placeholder helpers we used to ship
+here produced gray rectangles that the AI detector correctly classified as
+"fake" / "real" by their pixel statistics, making the demo look broken.
 
 Run from the repo root:
     python examples/generate_synthetic.py
@@ -37,17 +45,6 @@ def authentic_landscape() -> Image.Image:
     return Image.fromarray(_add_camera_noise(sky))
 
 
-def authentic_portrait() -> Image.Image:
-    """Smooth radial vignette over a flesh-tone field, uniform noise."""
-    y, x = np.mgrid[0:SIZE, 0:SIZE].astype(np.float32) - SIZE / 2
-    r = np.sqrt(x * x + y * y) / (SIZE / 2)
-    vignette = np.clip(1.0 - 0.35 * r, 0.3, 1.0)[..., None]
-    skin = np.array([212, 175, 145], dtype=np.float32)
-    arr = (skin * vignette).astype(np.float32)
-    arr = np.broadcast_to(arr, (SIZE, SIZE, 3)).copy()
-    return Image.fromarray(_add_camera_noise(arr))
-
-
 def tampered_composite() -> Image.Image:
     """Authentic-style base with a noisy, sharply-bounded patch pasted in.
 
@@ -76,23 +73,13 @@ def copy_move_obvious() -> Image.Image:
     return Image.fromarray(base)
 
 
-def ai_placeholder(label: str) -> Image.Image:
-    """Plain placeholder so the file exists. Replace with a real AI image."""
-    img = np.full((SIZE, SIZE, 3), 230, dtype=np.uint8)
-    img = _add_camera_noise(img, sigma=1)
-    pil = Image.fromarray(img)
-    return pil
-
-
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
+    # Only the two tampering fixtures are regenerated here. The authentic_*
+    # and ai_* demo files are real CIFAKE samples and must not be overwritten.
     files = {
-        "authentic_landscape.jpg": authentic_landscape(),
-        "authentic_portrait.jpg":  authentic_portrait(),
         "tampered_composite.jpg":  tampered_composite(),
         "copy_move_obvious.jpg":   copy_move_obvious(),
-        "ai_midjourney.jpg":       ai_placeholder("midjourney"),
-        "ai_realistic.jpg":        ai_placeholder("realistic"),
     }
     for name, img in files.items():
         path = OUT / name

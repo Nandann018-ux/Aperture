@@ -42,6 +42,11 @@ MODELS_DIR = Path("models")
 AI_CHECKPOINT = MODELS_DIR / "ai_detector_best.pt"
 META_CHECKPOINT = MODELS_DIR / "meta_classifier.pkl"
 
+# Paste the GitHub Release asset URL for ai_detector_best.pt here once the
+# release is published. Leave as-is to keep the AI Detection tab disabled.
+# Example: https://github.com/Nandann018-ux/Aperture/releases/download/v0.1/ai_detector_best.pt
+AI_DETECTOR_WEIGHTS_URL = ""
+
 EXAMPLE_FILES = [
     ("Authentic landscape", "authentic_landscape.jpg"),
     ("Authentic portrait", "authentic_portrait.jpg"),
@@ -49,6 +54,10 @@ EXAMPLE_FILES = [
     ("Copy-move", "copy_move_obvious.jpg"),
     ("AI — Midjourney-style", "ai_midjourney.jpg"),
     ("AI — realistic", "ai_realistic.jpg"),
+    ("Metadata: Photoshop edit", "photoshopped_photo.jpg"),
+    ("Metadata: date drift", "date_drift_photo.jpg"),
+    ("Metadata: low JPEG quality", "low_quality_jpeg.jpg"),
+    ("Metadata: AI-tool signature", "ai_generated_metadata.jpg"),
 ]
 
 
@@ -72,6 +81,45 @@ def _load_clip_classifier():
 def _load_text_extractor():
     from Aperture.scene import get_text_extractor
     return get_text_extractor()
+
+
+@st.cache_resource(show_spinner=False)
+def load_weights_if_missing(url: str, dest_str: str) -> bool:
+    """Download AI detector weights from a GitHub Release if not already on disk.
+
+    Returns True iff the weights file is present after this call. Cached via
+    ``st.cache_resource`` so we attempt the download at most once per container
+    lifecycle; the cache key includes both ``url`` and ``dest_str`` so swapping
+    the release URL invalidates and re-fetches.
+    """
+    import urllib.request
+
+    dest = Path(dest_str)
+    if dest.exists():
+        return True
+    if not url:
+        return False
+
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    tmp = dest.with_suffix(dest.suffix + ".part")
+    try:
+        with st.spinner(f"Downloading AI detector weights ({dest.name}) — first run only…"):
+            req = urllib.request.Request(url, headers={"User-Agent": "aperture-app"})
+            with urllib.request.urlopen(req, timeout=60) as resp, open(tmp, "wb") as fh:
+                while True:
+                    chunk = resp.read(1 << 20)  # 1 MiB
+                    if not chunk:
+                        break
+                    fh.write(chunk)
+        tmp.replace(dest)
+        return True
+    except Exception as exc:  # noqa: BLE001 — surface any download failure to the UI
+        tmp.unlink(missing_ok=True)
+        st.warning(
+            f"Could not fetch AI detector weights from {url}: "
+            f"{type(exc).__name__}: {exc}"
+        )
+        return False
 
 
 @st.cache_resource(show_spinner=False)
@@ -289,6 +337,10 @@ if run_scene_analysis:
         scene_result, scene_err = _safe(_run_scene, image_bytes)
 else:
     scene_result, scene_err = None, None
+
+# Ensure detector weights are on disk before instantiating the model.
+# Cached for the lifetime of the container so the download fires once.
+load_weights_if_missing(AI_DETECTOR_WEIGHTS_URL, str(AI_CHECKPOINT))
 
 if AI_CHECKPOINT.exists():
     with st.spinner("Running AI detector..."):

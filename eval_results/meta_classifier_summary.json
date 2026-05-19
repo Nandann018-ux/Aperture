@@ -9,9 +9,9 @@
   "intercept": 4.561341595654162,
   "coefficients": {
     "ai_conf": -6.080075611346619,
-    "tampering_score": -4.787522819084484,
+    "tampering_score": -4.787522819084482,
     "metadata_score": -4.680007994766021,
-    "has_text": 0.16614662544543904
+    "has_text": 0.16614662544543843
   },
   "feature_order": [
     "ai_conf",

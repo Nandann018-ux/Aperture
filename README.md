@@ -76,11 +76,13 @@ social platform.
 Interpretability is provided by Grad-CAM on the last conv block (and
 attention rollout for the ViT variant).
 
-| Metric | CIFAKE test |
+| Metric | CIFAKE test (n = 20,000) |
 |---|---|
-| Accuracy | <!-- TODO: insert from eval_results/cifake_metrics.json once notebook 02 runs --> |
-| F1       | <!-- TODO --> |
-| AUC      | <!-- TODO --> |
+| Accuracy  | **98.25%** |
+| F1 score  | **98.23%** |
+| Precision | **98.97%** |
+| Recall    | **97.50%** |
+| AUC       | **0.9987** |
 
 OOD evaluation on hand-collected Midjourney / Flux / DALL-E 3 samples is
 honest about generalization drop — see `eval_results/ood_metrics.json`
@@ -176,17 +178,26 @@ See `eval_results/calibration_meta.png` for the reliability diagram and
 
 ---
 
-## Limitations & Future Work
+## Limitations
 
-- **Trained on CIFAKE**, which is mostly older diffusion at 32×32.
-  Expected to underperform on newer generators (Flux, Imagen 3,
-  Midjourney v6+). OOD evaluation in notebook 03 documents this honestly.
+- **OOD evaluation pending.** The OOD-test split (Midjourney / Flux /
+  DALL-E 3 hand-collected samples) and per-generator accuracy table
+  documented in notebook 03 have not been produced yet. Until they are,
+  treat any claim of cross-generator generalization as unvalidated.
+- **Detector trained on CIFAKE — may underperform on newer generators.**
+  CIFAKE is mostly older diffusion at 32×32 upsampled to 224×224. Expect
+  noticeably degraded performance on Flux, Imagen 3, Midjourney v6+, SDXL,
+  and any other generator whose artifact statistics differ from the CIFAKE
+  training distribution.
+- **Metadata pipeline is rule-based, not exhaustive.** Anomaly detection
+  is a hand-curated set of rules (missing EXIF, editor-software
+  fingerprints, date drift, low quantization-table quality, etc.). It does
+  not learn from data, does not cover every editor or generator, and
+  *absence* of metadata is treated as a flag, not proof — stripping EXIF
+  is trivial.
 - **Tampering detection is post-hoc** — it sees only the pixels, so
   sophisticated edits with consistent compression and noise can fool
   all three methods.
-- **Metadata can be stripped trivially** — *absence* of metadata is a
-  flag, not proof, and Aperture treats it as such (medium severity, not
-  high).
 - **The meta-classifier was trained on synthetic distributions.** Once
   the AI detector checkpoint exists and a labeled set of ~100 images
   has been scored by all four pipelines, retraining is a one-command

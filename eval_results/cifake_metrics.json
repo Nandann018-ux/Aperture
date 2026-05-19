@@ -1,0 +1,15 @@
+{
+  "model": "efficientnet_b0",
+  "epochs": 5,
+  "final_train_loss": 0.0427019784486973,
+  "final_val_loss": 0.047279743859171865,
+  "final_val_acc": 0.98245,
+  "final_val_auc": 0.9986968649999999,
+  "final_val_f1": 0.9823182711198428,
+  "test_accuracy": 0.98245,
+  "test_f1": 0.9823182711198428,
+  "test_precision": 0.9897472337833723,
+  "test_recall": 0.975,
+  "test_auc": 0.998696865,
+  "test_n_samples": 20000
+}

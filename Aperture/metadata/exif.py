@@ -61,3 +61,7 @@ def normalized_fields(exif: dict) -> dict:
         "f_number": exif.get("FNumber"),
         "gps_present": any(k.startswith("GPS") for k in exif.keys()),
     }
+
+
+# Spec-compatible public alias — same callable, second name.
+extract_metadata = read_exif
