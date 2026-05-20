@@ -52,7 +52,7 @@ class AIDetector:
             return
         self.model_path = str(Path(model_path).resolve())
         self.device = _pick_device(device)
-        ckpt = torch.load(self.model_path, map_location=self.device)
+        ckpt = torch.load(self.model_path, map_location=self.device, weights_only=False)
         model_name = ckpt.get("model_name", "efficientnet_b0")
         model = get_model(model_name, pretrained=False)
         model.load_state_dict(ckpt["state_dict"])
