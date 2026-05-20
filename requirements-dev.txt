@@ -1,4 +1,9 @@
 -r requirements.txt
+
+# OCR — excluded from the deployed build (Streamlit Cloud RAM ceiling),
+# but kept locally so dev sees the full scene pipeline.
+easyocr==1.7.2
+
 pytest==8.0.0
 mypy==1.8.0
 seaborn==0.13.0
