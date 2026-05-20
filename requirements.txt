@@ -1,9 +1,11 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
+
 # Streamlit
 streamlit==1.40.0
 
-# ML core — Python 3.14 wheels confirmed
-torch==2.9.0
-torchvision==0.24.0
+# ML core — Python 3.14 wheels confirmed, CPU-only
+torch==2.9.0+cpu
+torchvision==0.24.0+cpu
 
 # Computer vision + imaging — cp314 wheels confirmed
 opencv-python-headless==4.10.0.84
