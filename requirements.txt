@@ -1,33 +1,18 @@
-# Streamlit
-streamlit==1.40.0
-
-# ML core — Python 3.14 wheels confirmed
-torch==2.9.0
-torchvision==0.24.0
-
-# Computer vision + imaging — cp314 wheels
-opencv-python-headless==4.10.0.84
-pillow==11.3.0
-numpy==2.2.6
-scipy==1.14.1
-scikit-learn==1.6.0
-
-# Detection + interpretability
-grad-cam==1.5.4
-ultralytics==8.3.40
-
-# Transformers + OCR
-transformers==4.46.0
-easyocr==1.7.2
-
-# Metadata
+streamlit==1.31.0
+torch==2.1.0
+torchvision==0.16.0
+opencv-python-headless==4.9.0.80
+pillow==10.2.0
+numpy==1.26.0
+scipy==1.11.4
+scikit-learn==1.4.0
+grad-cam==1.5.0
+ultralytics==8.1.0
+transformers==4.36.0
+easyocr==1.7.0
 piexif==1.1.3
-
-# Plotting
-matplotlib==3.10.0
-seaborn==0.13.2
-
-# Utility
-requests==2.32.3
-tqdm==4.66.5
-joblib==1.4.2
+matplotlib==3.8.0
+seaborn==0.13.0
+requests==2.31.0
+tqdm==4.66.0
+joblib==1.3.2
