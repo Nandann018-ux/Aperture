@@ -1,21 +1,10 @@
----
-title: Aperture Forensics
-emoji: 🔍
-colorFrom: blue
-colorTo: purple
-sdk: docker
-pinned: false
-license: mit
-app_port: 7860
----
-
 # Aperture — Image Forensic Analysis
 
-> **Live demo:** <https://nandann018-aperture-forensics.hf.space>
+**Live demo:** <https://nandann018-aperture-forensics.hf.space>
 
-A multi-signal forensic verdict system for images. Four independent pipelines run in
-parallel — generative-origin detection, classical tampering analysis, scene
-understanding, and metadata inspection — and a Platt-calibrated meta-classifier
+A multi-signal forensic verdict system for images. Four independent pipelines —
+generative-origin detection, classical tampering analysis, scene understanding,
+and metadata inspection — run in parallel and a Platt-calibrated meta-classifier
 fuses them into a single authenticity probability with ranked, plain-English
 explanations.
 
@@ -31,45 +20,59 @@ a tampering detector alone misses born-digital generation.
 
 Aperture is built on the premise that **multiple weak signals fused with proper
 calibration beat any single strong signal**. Every verdict surfaces which
-signals moved it and by how much, so users (and reviewers) can spot
-over-reliance on any one pipeline.
+signals moved it and by how much, so reviewers can spot over-reliance on any
+one pipeline.
+
+---
+
+## Architecture
+
+![Pipeline diagram](docs/architecture.png)
+
+Four pipelines run in parallel against the input image. Each emits a
+normalized score in `[0, 1]`. A logistic-regression meta-classifier, Platt-
+calibrated via `CalibratedClassifierCV`, fuses the four scores plus a binary
+"image-has-text" flag into the final `P(authentic)` and a ranked list of
+per-factor contributions.
+
+| Pipeline | Approach | Tech |
+|---|---|---|
+| **Generative-origin** | Fine-tuned EfficientNet-B0 on CIFAKE with JPEG-augmented training; Grad-CAM on the last conv block | PyTorch, torchvision, pytorch-grad-cam |
+| **Tampering** | ELA + noise-residual + copy-move detection fused with weights `0.4 / 0.4 / 0.2` | OpenCV, SIFT, NumPy |
+| **Scene** | YOLOv8n object detection + CLIP ViT-B/32 zero-shot classification + EasyOCR text extraction | ultralytics, transformers, EasyOCR |
+| **Metadata** | EXIF / IPTC parsing, JPEG quality reverse-engineered from Annex K quantization tables, 28 rule-based anomaly flags | Pillow, piexif |
 
 ---
 
 ## Interface
 
-### Verdict and AI detection
+The app surfaces every signal as its own tab plus a fused verdict tab on top.
 
-| Verdict — fused probability + ranked factors | AI Detection — Grad-CAM heatmap |
-|:--:|:--:|
-| ![Verdict tab](docs/screenshots/verdict.png) | ![AI Detection heatmap](docs/screenshots/ai_detection.png) |
+### Verdict — fused probability with ranked factors
+![Verdict tab](docs/screenshots/verdict.png)
 
-### Tampering and scene
+### AI Detection — Grad-CAM heatmap over the input
+![AI Detection heatmap](docs/screenshots/ai_detection.png)
 
-| Tampering Analysis — ELA, noise, copy-move | Scene Understanding — YOLO + CLIP + OCR |
-|:--:|:--:|
-| ![Tampering analysis](docs/screenshots/tampering.png) | ![Scene parsing](docs/screenshots/scene.png) |
+### Tampering — ELA, noise residual, copy-move
+![Tampering analysis](docs/screenshots/tampering.png)
 
-### Metadata and model performance
+### Scene — YOLO + CLIP + OCR
+![Scene parsing](docs/screenshots/scene.png)
 
-| Metadata Forensics — EXIF + JPEG + anomaly rules | Model Performance — held-out metrics |
-|:--:|:--:|
-| ![Metadata flags](docs/screenshots/metadata.png) | ![Held-out metrics](docs/screenshots/performance.png) |
+### Metadata — EXIF + JPEG + anomaly rules
+![Metadata flags](docs/screenshots/metadata.png)
+
+### Model Performance — held-out metrics + reliability diagrams
+![Held-out metrics](docs/screenshots/performance.png)
 
 ---
 
-## How it works
+## Metrics
 
-![Pipeline diagram](docs/architecture.png)
+CIFAKE held-out test split (n = 20 000):
 
-### 1 · Generative-origin detection
-
-Fine-tuned **EfficientNet-B0** trained on **CIFAKE** (60k real vs. AI-generated
-images), hardened with `RandomJPEGCompression(60–95)` against the re-encoding
-that happens whenever a generated image passes through a social platform.
-**Grad-CAM** on the final conv block exposes the regions the model attended to.
-
-| Metric | CIFAKE held-out (n = 20 000) |
+| Metric | Value |
 |---|---|
 | Accuracy | **98.25 %** |
 | F1 | **98.23 %** |
@@ -77,119 +80,23 @@ that happens whenever a generated image passes through a social platform.
 | Recall | **97.50 %** |
 | AUC | **0.9987** |
 
-### 2 · Classical tampering analysis
+Sample verdicts (full pipeline, four signals fused):
 
-Three computer-vision techniques fused with weights `0.4 / 0.4 / 0.2`:
-
-- **Error Level Analysis** — re-encode at JPEG q=90, max-to-mean ratio of
-  sliding-window standard deviations. Spliced regions spike against the
-  spatially-uniform compression error of authentic captures.
-- **Noise residual** — image minus 5×5 Gaussian blur, projected to luminance;
-  per-block standard deviation across an 8×8 grid. Spliced regions carry foreign
-  noise statistics.
-- **Copy-move detection** — SIFT descriptors matched against themselves, filtered
-  by Lowe's ratio test (0.7) and a 40 px spatial-distance threshold. Many
-  surviving pairs ⇒ likely cloned region.
-
-| Image | ELA | Noise | Copy-move | **Combined** |
-|---|---|---|---|---|
-| Authentic landscape | 1.29 | 0.65 | 0 | **0.260** |
-| Authentic portrait | 1.26 | 0.05 | 0 | **0.096** |
-| Tampered composite | 4.47 | 1.54 | 0 | **0.698** |
-| Copy-move sample | 4.18 | 1.59 | 28 | **0.879** |
-
-### 3 · Scene understanding
-
-- **YOLOv8 nano** (`ultralytics`) for object detection, confidence floor 0.4.
-- **CLIP ViT-B/32** (`transformers`) for zero-shot scene classification across a
-  12-label set (indoor/outdoor, portrait, landscape, document, screenshot,
-  artwork, product, food, animal, …).
-- **EasyOCR** for on-image text extraction, confidence floor 0.5. Surfaces a
-  "verdict less reliable" caveat when text-heavy content is detected.
-
-### 4 · Metadata forensics
-
-- EXIF / IPTC parsing via Pillow's `getexif()` (including the Exif IFD).
-- JPEG quality reverse-engineered from libjpeg's Annex K quantization-table
-  scaling formula.
-- Rule-based anomaly flags with severity `{low, medium, high}`: missing EXIF,
-  editor-software fingerprints (Photoshop / Lightroom / Midjourney / Stable
-  Diffusion / Flux), date-modified drift, missing camera Make/Model, low
-  estimated JPEG quality, atypical quantization-table count.
-- Anomaly score is a saturating severity-weighted sum, clipped to `[0, 1]`.
-
-### Verdict fusion
-
-- `LogisticRegression(class_weight="balanced")` for interpretable coefficients.
-- `CalibratedClassifierCV(method="sigmoid", cv=5)` for calibrated probability
-  output (Platt scaling).
-- Contributing factor = `coefficient × feature_value`, ranked by absolute
-  magnitude.
-- A plain-English explanation is rendered per factor, keyed off the feature
-  *value* (not the sign of the contribution, which can mis-narrate when all
-  coefficients share a sign).
-
-| Feature | Coefficient |
-|---|---|
-| `ai_conf` | -6.08 |
-| `tampering_score` | -4.79 |
-| `metadata_score` | -4.68 |
-| `has_text` | +0.17 |
-
-Calibration plot: `eval_results/calibration_meta.png` · full metrics dump:
-`eval_results/meta_classifier_summary.json`.
-
----
-
-## Sample verdicts
-
-| Image | P(authentic) | Verdict | Top contributing factor |
+| Image | P(authentic) | Verdict | Top factor |
 |---|---|---|---|
 | Authentic landscape | 0.99 | authentic | tampering analysis (low) |
 | AI-generated (synthetic) | 0.01 | fake | AI detector (high) |
 | Tampered composite | 0.00 | fake | tampering analysis (high) |
 | Borderline + text | 0.02 | fake | AI detector (medium) — text caveat surfaced |
 
----
-
-## Limitations
-
-- **OOD evaluation pending.** Cross-generator metrics on hand-collected
-  Midjourney / Flux / DALL-E 3 samples have not been produced. Until they are,
-  treat any claim of cross-generator generalization as unvalidated.
-- **CIFAKE-trained detector may underperform on newer generators.** CIFAKE is
-  primarily older diffusion at 32×32 upsampled to 224×224. Expect degraded
-  performance on Flux, Imagen 3, Midjourney v6+, SDXL, and any generator whose
-  artifact statistics differ from the CIFAKE training distribution.
-- **Metadata pipeline is rule-based, not learned.** It does not cover every
-  editor or generator, and *absence* of metadata is treated as a flag, not
-  proof — stripping EXIF is trivial.
-- **Tampering detection is post-hoc.** It sees only the pixels, so sophisticated
-  edits with consistent compression and noise can fool all three methods.
-- **The meta-classifier was trained on synthetic distributions.** Once a
-  labeled set scored end-to-end by all four pipelines is available, retraining
-  is a single command.
-- **No video.** A future audio + temporal-consistency module would extend this
-  to deepfake video.
-- **No attention-based fusion.** Current fusion is linear. A small transformer
-  over per-pipeline tokens could learn nonlinear interactions between signals.
-
----
-
-## Stack
-
-- **ML / CV:** PyTorch 2.1, torchvision, transformers 4.36, ultralytics 8.1
-  (YOLOv8), OpenCV 4.9, scikit-learn 1.4, pytorch-grad-cam, EasyOCR.
-- **App:** Streamlit 1.31 with a custom light forensic-lab theme (Source Serif 4
-  + Inter + JetBrains Mono via Google Fonts).
-- **Eval / training:** matplotlib, joblib, tqdm, pandas, numpy.
-- **Dev:** pytest, mypy, Playwright (headless screenshot capture).
+Reliability diagram: `eval_results/calibration_meta.png` · full dump:
+`eval_results/meta_classifier_summary.json`.
 
 ---
 
 ## Run locally
 
-Python 3.10 recommended (matches the deployment runtime).
+Python 3.10 (matches the deployment runtime).
 
 ```bash
 git clone https://github.com/Nandann018-ux/Aperture.git
@@ -209,31 +116,34 @@ weights (~100 MB) into the OS cache. Subsequent runs reuse them.
 python -c "from Aperture.verdict.meta_classifier import main; main()"
 ```
 
-Reads `data/meta_classifier_training.csv`, fits an LR + Platt-scaled classifier,
-and writes `models/meta_classifier.pkl` + `eval_results/calibration_meta.png`.
-The deployed app rebuilds this on first cold start, so the pickle does not need
-to be checked in.
+Reads `data/meta_classifier_training.csv`, fits an LR + Platt-scaled
+classifier, and writes `models/meta_classifier.pkl`. The deployed app
+rebuilds this on first cold start so the pickle does not need to be
+checked in.
 
 ### Train the AI detector
 
 The CIFAKE detector is trained in `notebooks/02_detector_training.ipynb`
-(Colab-aware, T4 GPU). Drop the resulting `models/ai_detector_best.pt` back
-into the repo (or publish it as a GitHub Release asset) to unlock the AI
-Detection tab end-to-end.
+(Colab-aware, T4 GPU). Drop `models/ai_detector_best.pt` back into the
+repo, or publish it as a GitHub Release asset, to unlock the AI Detection
+tab end-to-end.
 
 ---
 
 ## Deployment
 
 The repo ships with a Docker target tuned for **Hugging Face Spaces**
-(`python:3.10-slim` base, opencv / torch system libraries, Streamlit on port
-7860). The YAML frontmatter at the top of this file is the Space's
-configuration.
+(`python:3.10-slim` base, OpenCV/Torch system libraries, Streamlit on
+port 7860).
 
 ```bash
 docker build -t aperture .
 docker run -p 7860:7860 aperture
 ```
+
+The HF Space metadata (title, emoji, SDK, port) lives in
+[`README_HF.md`](README_HF.md), which is injected over `README.md` only
+on the HF orphan deploy.
 
 ---
 
@@ -247,28 +157,44 @@ python scripts/capture_screenshots.py    # regenerate README images
 
 ---
 
+## Limitations
+
+- **OOD evaluation pending.** Cross-generator metrics on hand-collected
+  Midjourney / Flux / DALL-E 3 samples have not been produced. Treat
+  cross-generator generalization as unvalidated.
+- **CIFAKE-trained detector** is primarily older diffusion at 32×32
+  upsampled to 224×224 — expect degraded performance on Flux, Imagen 3,
+  Midjourney v6+, SDXL.
+- **Metadata pipeline is rule-based, not learned.** Absence of metadata
+  is treated as a flag, not proof.
+- **Tampering detection is post-hoc** and sees only the pixels, so
+  sophisticated edits with consistent compression and noise can fool
+  all three methods.
+
+---
+
 ## Project structure
 
 ```
 Aperture/
 ├── app.py                     # Streamlit entry point
 ├── Dockerfile                 # HF Spaces Docker target
+├── README.md                  # this file (GitHub-facing)
+├── README_HF.md               # HF Spaces frontmatter overlay
 ├── Aperture/
-│   ├── ai_detector/           # CNN-based AI-generation detector + Grad-CAM
-│   ├── tampering/             # ELA, noise, copy-move, weighted fusion
+│   ├── ai_detector/           # EfficientNet detector + Grad-CAM
+│   ├── tampering/             # ELA, noise, copy-move, fusion
 │   ├── scene/                 # YOLO + CLIP + EasyOCR
-│   ├── metadata/              # EXIF + JPEG quality + anomaly rules
-│   ├── verdict/               # Calibrated meta-classifier + explanations
-│   ├── ui/                    # Streamlit theme + components + tab renderers
+│   ├── metadata/              # EXIF + JPEG + anomaly rules
+│   ├── verdict/               # Meta-classifier + explanations
+│   ├── ui/                    # Streamlit theme + components + tabs
 │   └── utils/                 # Image IO + visualization helpers
 ├── tests/                     # pytest suite
 ├── notebooks/                 # Training + evaluation
 ├── examples/                  # Curated example images
-├── eval_results/              # Saved metrics, plots, pipeline diagram
+├── eval_results/              # Saved metrics, plots, diagrams
 ├── docs/                      # README assets (architecture, screenshots)
-├── requirements.txt           # Production deps
-├── requirements-dev.txt       # Adds pytest, mypy, playwright, seaborn, easyocr
-└── runtime.txt                # Python 3.10
+└── requirements*.txt          # Prod + dev pins
 ```
 
 ---
