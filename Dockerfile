@@ -3,8 +3,10 @@ FROM python:3.10-slim
 WORKDIR /app
 
 # System dependencies for opencv, torch, etc.
+# Debian Trixie (current python:3.10-slim base) renamed libgl1-mesa-glx
+# to libgl1 — pinning the new name so the build doesn't fail on lookup.
 RUN apt-get update && apt-get install -y \
-    libgl1-mesa-glx \
+    libgl1 \
     libglib2.0-0 \
     libsm6 \
     libxext6 \
