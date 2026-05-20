@@ -47,24 +47,40 @@ per-factor contributions.
 ## Interface
 
 The app surfaces every signal as its own tab plus a fused verdict tab on top.
+Each thumbnail below links to the full-size capture.
 
-### Verdict — fused probability with ranked factors
-![Verdict tab](docs/screenshots/verdict.png)
-
-### AI Detection — Grad-CAM heatmap over the input
-![AI Detection heatmap](docs/screenshots/ai_detection.png)
-
-### Tampering — ELA, noise residual, copy-move
-![Tampering analysis](docs/screenshots/tampering.png)
-
-### Scene — YOLO + CLIP + OCR
-![Scene parsing](docs/screenshots/scene.png)
-
-### Metadata — EXIF + JPEG + anomaly rules
-![Metadata flags](docs/screenshots/metadata.png)
-
-### Model Performance — held-out metrics + reliability diagrams
-![Held-out metrics](docs/screenshots/performance.png)
+<table>
+<tr>
+<td align="center" width="50%">
+<a href="docs/screenshots/verdict.png"><img src="docs/screenshots/verdict.png" alt="Verdict tab" width="480"></a><br/>
+<sub><b>Verdict</b> — fused probability + ranked factors</sub>
+</td>
+<td align="center" width="50%">
+<a href="docs/screenshots/ai_detection.png"><img src="docs/screenshots/ai_detection.png" alt="AI Detection heatmap" width="480"></a><br/>
+<sub><b>AI Detection</b> — Grad-CAM heatmap over input</sub>
+</td>
+</tr>
+<tr>
+<td align="center">
+<a href="docs/screenshots/tampering.png"><img src="docs/screenshots/tampering.png" alt="Tampering analysis" width="480"></a><br/>
+<sub><b>Tampering</b> — ELA, noise residual, copy-move</sub>
+</td>
+<td align="center">
+<a href="docs/screenshots/scene.png"><img src="docs/screenshots/scene.png" alt="Scene parsing" width="480"></a><br/>
+<sub><b>Scene</b> — YOLO + CLIP + OCR</sub>
+</td>
+</tr>
+<tr>
+<td align="center">
+<a href="docs/screenshots/metadata.png"><img src="docs/screenshots/metadata.png" alt="Metadata flags" width="480"></a><br/>
+<sub><b>Metadata</b> — EXIF + JPEG + anomaly rules</sub>
+</td>
+<td align="center">
+<a href="docs/screenshots/performance.png"><img src="docs/screenshots/performance.png" alt="Model performance" width="480"></a><br/>
+<sub><b>Model Performance</b> — held-out metrics + reliability</sub>
+</td>
+</tr>
+</table>
 
 ---
 
