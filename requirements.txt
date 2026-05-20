@@ -5,14 +5,14 @@ streamlit==1.40.0
 torch==2.9.0
 torchvision==0.24.0
 
-# Computer vision + imaging — confirmed cp314 wheels
+# Computer vision + imaging — cp314 wheels confirmed
 opencv-python-headless==4.10.0.84
 pillow==11.3.0
 numpy==2.2.0
 scipy==1.14.1
 scikit-learn==1.6.0
 
-# Detection + interpretability — bumped ultralytics for numpy 2.x compatibility
+# Detection + interpretability
 grad-cam==1.5.4
 ultralytics==8.3.40
 
