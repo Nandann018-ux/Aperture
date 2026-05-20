@@ -1,6 +1,17 @@
 [theme]
-base = "dark"
-primaryColor = "#A78BFA"
-backgroundColor = "#0A0A0A"
-secondaryBackgroundColor = "#141414"
-textColor = "#F5F5F0"
+base = "light"
+primaryColor = "#2F6FB1"
+backgroundColor = "#F4F2EC"
+secondaryBackgroundColor = "#FFFFFF"
+textColor = "#14181F"
+
+[client]
+# Hide Streamlit's Deploy / hamburger / running badge at the framework
+# level, so they never appear (not even during the first-paint window
+# before our CSS injection runs). Combined with the CSS visibility-hide
+# below, no Streamlit chrome leaks through.
+toolbarMode = "minimal"
+showErrorDetails = false
+
+[browser]
+gatherUsageStats = false
