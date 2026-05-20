@@ -1,23 +1,23 @@
 # Streamlit
 streamlit==1.40.0
 
-# ML core — Python 3.14 wheels required
+# ML core — Python 3.14 wheels confirmed
 torch==2.9.0
 torchvision==0.24.0
 
-# Computer vision + imaging — bumped for cp314 wheels
+# Computer vision + imaging — confirmed cp314 wheels
 opencv-python-headless==4.10.0.84
 pillow==11.3.0
-numpy==2.3.0
-scipy==1.15.0
+numpy==2.2.0
+scipy==1.14.1
 scikit-learn==1.6.0
 
-# Detection + interpretability
+# Detection + interpretability — bumped ultralytics for numpy 2.x compatibility
 grad-cam==1.5.4
-ultralytics==8.3.0
+ultralytics==8.3.40
 
 # Transformers + OCR
-transformers==4.50.0
+transformers==4.46.0
 easyocr==1.7.2
 
 # Metadata
