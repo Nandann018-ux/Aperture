@@ -4,6 +4,7 @@ torchvision==0.24.0
 opencv-python-headless==4.10.0.84
 pillow==11.3.0
 numpy==2.2.6
+pandas==2.2.3
 scipy==1.14.1
 scikit-learn==1.6.0
 grad-cam==1.5.4
@@ -14,4 +15,4 @@ matplotlib==3.10.0
 seaborn==0.13.2
 requests==2.32.3
 tqdm==4.66.5
-joblib==1.4.2
+joblib==1.4.2pandas==2.2.3
