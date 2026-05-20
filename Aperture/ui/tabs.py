@@ -444,7 +444,9 @@ def render_scene_tab(image: Image.Image, scene: dict) -> None:
             )
     with cols[2]:
         html(section_eyebrow("Extracted text"))
-        if ocr.get("text_found"):
+        if ocr.get("note"):
+            html(honest_note("ocr unavailable", ocr["note"]))
+        elif ocr.get("text_found"):
             st.code(ocr.get("extracted_text", ""), language=None)
             st.caption(f"{len(ocr.get('regions', []))} region(s) above confidence 0.5")
         else:
