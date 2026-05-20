@@ -158,6 +158,37 @@ EXAMPLE_FILES = [
 
 
 # --------------------------------------------------------------------------
+# Meta-classifier bootstrap
+# --------------------------------------------------------------------------
+# The pickle isn't checked into git for the deployed build — it must be
+# rebuilt against the runtime's numpy / sklearn so old-version pickles
+# don't crash on unpickle (numpy 1.26-saved arrays won't load under
+# numpy 2.x). Training is ~2 s against the bundled CSV. Cached so we
+# train at most once per container lifecycle.
+
+@st.cache_resource(show_spinner=False)
+def _ensure_meta_classifier() -> bool:
+    if META_CHECKPOINT.exists():
+        return True
+    csv_path = Path("data") / "meta_classifier_training.csv"
+    if not csv_path.exists():
+        return False
+    try:
+        with st.spinner("Calibrating meta-classifier — first run only…"):
+            from Aperture.verdict.meta_classifier import train_and_save
+            train_and_save(csv_path, META_CHECKPOINT, Path("eval_results"))
+        return True
+    except Exception as exc:  # noqa: BLE001
+        st.warning(
+            f"Could not train meta-classifier: {type(exc).__name__}: {exc}"
+        )
+        return False
+
+
+_ensure_meta_classifier()
+
+
+# --------------------------------------------------------------------------
 # Cached model loaders + analyses
 # --------------------------------------------------------------------------
 
