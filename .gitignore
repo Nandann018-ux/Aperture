@@ -1,9 +1,17 @@
 data/
 models/*.pt
 models/*.pth
+models/*.pkl
 __pycache__/
 .venv/
 *.ipynb_checkpoints/
 .pytest_cache/
 .mypy_cache/
 .DS_Store
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Local screenshot / scratch dirs
+/tmp/
+*.log
